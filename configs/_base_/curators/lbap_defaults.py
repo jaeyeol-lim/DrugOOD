@@ -1,7 +1,7 @@
 # data path
 path = dict(
     task=dict(type="lbap", subset="lbap_core_ec50_assay"),
-    source_root="/apdcephfs/share_1364275/xluzhang/chembl_29_sqlite/chembl_29.db",
+    source_root="/workspace/chembl29/chembl_29_sqlite/chembl_29.db",
     target_root="data/"
 )
 # filter

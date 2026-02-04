@@ -14,6 +14,7 @@ from transformers import BertTokenizer
 
 from ..builder import PIPELINES
 
+from torch_geometric.data import Data as PyGData
 
 def to_tensor(data):
     """Convert objects of various python types to :obj:`torch.Tensor`.
@@ -343,3 +344,40 @@ class SeqToToken(object):
                                 padding=self.padding,
                                 max_length=self.max_length)
         return output
+
+
+@PIPELINES.register_module()
+class DGLGraphToPyG(object):
+    def __init__(self, keys=["input"], node_feat_key="x", edge_feat_key="x"):
+        self.keys = keys
+        self.node_feat_key = node_feat_key
+        self.edge_feat_key = edge_feat_key
+
+    def __call__(self, results):
+        import torch
+        for key in self.keys:
+            g = results[key]  # DGLGraph
+
+            src, dst = g.edges()
+            edge_index = torch.stack([src, dst], dim=0).long()
+
+            x = g.ndata[self.node_feat_key]
+            edge_attr = g.edata[self.edge_feat_key] if self.edge_feat_key is not None else None
+
+            results[key] = PyGData(x=x, edge_index=edge_index, edge_attr=edge_attr)
+        return results
+
+
+@PIPELINES.register_module()
+class PackPyG(object):
+    def __init__(self, graph_key="input", label_key="gt_label", group_key="group"):
+        self.graph_key = graph_key
+        self.label_key = label_key
+        self.group_key = group_key
+
+    def __call__(self, results):
+        import torch
+        data = results[self.graph_key]  # PyG Data
+        data.y = torch.tensor([results[self.label_key]], dtype=torch.long)
+        data.group = torch.tensor([results[self.group_key]], dtype=torch.long)
+        return data

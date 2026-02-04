@@ -117,3 +117,6 @@ venv.bak/
 *.pth
 
 .DS_Store
+
+# json
+data/
