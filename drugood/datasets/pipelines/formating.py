@@ -153,6 +153,7 @@ class SmileToGraph(object):
 
     def __call__(self, results):
         for key in self.keys:
+            results[f'_smiles_{key}'] = results[key]   # 원본 SMILES 백업 (scaffold 분석용)
             results[key] = self.smile2graph(results[key])
         return results
 
@@ -364,7 +365,11 @@ class DGLGraphToPyG(object):
             x = g.ndata[self.node_feat_key]
             edge_attr = g.edata[self.edge_feat_key] if self.edge_feat_key is not None else None
 
-            results[key] = PyGData(x=x, edge_index=edge_index, edge_attr=edge_attr)
+            _data = PyGData(x=x, edge_index=edge_index, edge_attr=edge_attr)
+            _sm = results.get(f'_smiles_{key}')
+            if _sm is not None:
+                _data.smiles = _sm                    # scaffold 분석용 원본 SMILES
+            results[key] = _data
         return results
 
 
